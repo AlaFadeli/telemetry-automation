@@ -8,3 +8,8 @@ wheels/
 
 # Virtual environments
 .venv
+
+# Generated telemetry artifacts (regenerable via fetch pipeline)
+cache/
+data/
+notes.md

@@ -22,6 +22,7 @@ def fetch(
     ingest and analysis steps downstream.
     """
     print(f"Fetching {year} {round_name} {session} for: {drivers}")
+    main(year, round_name, session, drivers, out_dir, cache_dir)
 
 
 def load_session(year: int, round_name: str, session: str, cache_dir: str):
@@ -57,10 +58,32 @@ def extract_car_data(laps_by_drivers):
             frames.append(tele)
     return pd.concat(frames,ignore_index=True)        
 
+def sanity_checks(df, laps_df):
+    assert len(df) > 0, 'DataFrame is empty'
+    assert df['Speed'].max() < 400, 'Speed physically impossible'
+    assert df['Speed'].min() >= 0, 'Speed physically impossible'
+    assert df['RPM'].max() < 15000, 'Rotation per minute physically impossible'
+    assert df['RPM'].min() >= 0, 'Rotation per minute physically impossible'
+    assert laps_df['LapTime'].notna().all(), 'Nat rows slipped into the data'
+    assert df['Driver'].nunique() == 2, 'Expected 2 drivers, got ' + str(df['Driver'].nunique())
+
+
 def save_data(df, laps_by_drivers, out_dir):
+    Path(out_dir).mkdir(parents=True, exist_ok=True)
+    df.to_csv(Path(out_dir) / 'telemetry.csv', index=False)
+    laps_all = pd.concat(laps_by_drivers, ignore_index=True)
+    laps_all.to_csv(Path(out_dir) / 'laps.csv', index=False)
+    
 
-
-
+def main(year, round_name, session, drivers, out_dir, cache_dir):
+    session_obj = load_session(year, round_name, session, cache_dir)
+    driver_list = drivers.split(',')
+    laps = select_laps(session_obj, driver_list)
+    df = extract_car_data(laps)
+    laps_df = pd.concat(laps, ignore_index=True)
+    sanity_checks(df, laps_df)
+    save_data(df, laps, out_dir)
+    print(f"Saved {len(df)} telemetry rows + {len(laps_df)} laps to {out_dir}")
 
 
 
