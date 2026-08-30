@@ -6,7 +6,7 @@ import streamlit as st
 
 DATA = Path("data/processed/telemetry.parquet")
 
-ACCENT = "#E63946"
+ACCENT = "#E6B450"
 
 
 @st.cache_data
@@ -100,7 +100,8 @@ def show_replay(df: pd.DataFrame) -> None:
 
 def show_comparison(df: pd.DataFrame, drivers: list[str]) -> None:
     cols = st.columns(2)
-    d1, d2 = cols[0].selectbox("Driver A", drivers), cols[1].selectbox("Driver B", drivers)
+    d1 = cols[0].selectbox("Driver A", drivers, key="comp_driver_a")
+    d2 = cols[1].selectbox("Driver B", drivers, key="comp_driver_b")
 
     base = df[df["Driver"] == d1].sort_values("LapTime").iloc[[0]]
     comp = df[df["Driver"] == d2].sort_values("LapTime").iloc[[0]]
@@ -140,9 +141,10 @@ def main() -> None:
 
     st.sidebar.title("Telemetry Lab")
     view = st.sidebar.radio("View", ["Replay", "Compare Lap Times", "Track Map", "Pipeline & Method"])
-    driver = st.sidebar.selectbox("Driver", drivers)
+    
+    driver = st.sidebar.selectbox("Driver", drivers, key="driver_select")
     lap_options = sorted(df[df["Driver"] == driver]["LapNumber"].unique())
-    lap = st.sidebar.selectbox("Lap", lap_options, format_func=lambda x: f"Lap {int(x)}")
+    lap = st.sidebar.selectbox("Lap", lap_options, format_func=lambda x: f"Lap {int(x)}", key="lap_select")
 
     sub = df[(df["Driver"] == driver) & (df["LapNumber"] == float(lap))]
 
@@ -154,7 +156,10 @@ def main() -> None:
     elif view == "Compare Lap Times":
         show_comparison(df, drivers)
     elif view == "Track Map":
-        st.plotly_chart(track_map(sub), use_container_width=True)
+        lap_options_map = sorted(df[df["Driver"] == driver]["LapNumber"].unique())
+        lap_map = st.sidebar.selectbox("Lap", lap_options_map, format_func=lambda x: f"Lap {int(x)}", key="map_lap_select")
+        sub_map = df[(df["Driver"] == driver) & (df["LapNumber"] == float(lap_map))]
+        st.plotly_chart(track_map(sub_map), use_container_width=True)
     elif view == "Pipeline & Method":
         show_pipeline()
 
