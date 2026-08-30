@@ -12,4 +12,5 @@ wheels/
 # Generated telemetry artifacts (regenerable via fetch pipeline)
 cache/
 data/
+!data/processed/telemetry.parquet
 notes.md
